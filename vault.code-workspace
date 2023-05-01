@@ -1,0 +1,32 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"rust-analyzer.linkedProjects": [
+			"Cargo.toml",
+			".\\Cargo.toml",
+			".\\Cargo.toml",
+			".\\Cargo.toml",
+			".\\Cargo.toml",
+			".\\Cargo.toml",
+			".\\Cargo.toml",
+			".\\Cargo.toml",
+			".\\Cargo.toml",
+			".\\Cargo.toml",
+			".\\Cargo.toml",
+			".\\Cargo.toml",
+			".\\src\\vault\\Cargo.toml",
+			".\\src\\vault\\Cargo.toml",
+			".\\src\\vault\\Cargo.toml",
+			".\\src\\cli\\Cargo.toml",
+			".\\src\\vault\\Cargo.toml",
+			".\\src\\vault\\Cargo.toml",
+			".\\src\\vault\\Cargo.toml",
+			".\\src\\vault\\Cargo.toml",
+			".\\src\\vault\\Cargo.toml"
+		]
+	}
+}
