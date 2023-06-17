@@ -4,25 +4,53 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
-        
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'vault'",
+            "name": "Debug service 'vault-service'",
             "cargo": {
                 "args": [
                     "build",
                     "--bin=cli",
-                    "--package=vault"
-
+                    "--package=service"
+                ],
+                "filter": {
+                    "name": "service",
+                    "kind": "bin"
+                }
+            },
+            // "args": ["admin", "add-profile", "--security-key", "1234", "--name", "profile0"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "test vault",
+            "cargo": {
+                "args": [
+                    "test",
+                ],
+            },
+            // "args": ["admin", "add-profile", "--security-key", "1234", "--name", "profile0"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'cli'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=cli",
+                    "--package=cli"
                 ],
                 "filter": {
                     "name": "cli",
                     "kind": "bin"
                 }
             },
-            "args": ["admin", "add-profile", "--security-key", "1234", "--name", "profile0"],
+            "args": ["init", "--password","1234","--store-type","disk"],
+            // "args": ["admin", "add-profile", "--security-key","1234","--name","profile0"],
             "cwd": "${workspaceFolder}"
         },
         {
@@ -33,7 +61,7 @@
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=cli",
+                    "--bin=vault",
                     "--package=vault",
                     "--all-features"
                 ],
@@ -49,13 +77,16 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/vault.exe",
-            "args": ["init", "--security-key", "1234"],
+            "args": [
+                "init",
+                "--security-key",
+                "1234"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceRoot}",
             "environment": [],
             "console": "integratedTerminal",
             "preLaunchTask": "rust: cargo build"
         },
-
     ]
 }

@@ -1,0 +1,25 @@
+@startuml New Vault
+title How to create a new Vault
+
+start
+:input **AdminPassword**, VaultName, VaultType and Target;/
+if (params are invalid?) then (yes)
+    #red: error;
+    stop
+endif
+if (vault exists) then (yes)
+    #red:error;
+    stop
+endif
+if (windows and user Not Admin) then (yes)
+    #red:error;
+    stop
+endif
+
+:
+Create a new Profile with is_master = true
+|
+
+:Add the admin_container to the store;
+end
+@enduml

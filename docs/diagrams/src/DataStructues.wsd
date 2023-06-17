@@ -1,0 +1,44 @@
+@startuml
+title Data Structures
+
+struct Vault {
+
+}
+
+
+struct CipherKey<T> {
+    nonce: byte[],
+    T: Target
+}
+
+struct ProfileContainer
+{
+    key: String,
+    nonce: Vec<u8>,
+    profile_secure: Vec<u8>,
+}    
+
+struct Profile {
+
+    key: String,
+    auth_key_validator: String,
+    source_key: String,
+    name: String,
+    is_master: bool,
+    is_active: bool,
+}
+note right of Profile::is_master
+When true signals as the administrative profile
+end note
+
+
+
+note right of Secret::data 
+    JSON representation of an object
+end note
+
+Vault "1" *-- "*" ProfileContainer
+ProfileContainer "1" --- "1" Profile
+Profile "1" *-- "*" Scope : scopes:access_key <-> access_key
+Scope "1" *-- "*" Secret : secrets:access_key <-> access_key
+@enduml

@@ -1,5 +1,21 @@
 {
     "rust-analyzer.linkedProjects": [
-        "Cargo.toml"
-    ]
+        "Cargo.toml",
+        ".\\src\\vault\\Cargo.toml",
+        ".\\src\\vault\\Cargo.toml",
+        ".\\src\\vault\\Cargo.toml",
+        ".\\src\\vault\\Cargo.toml",
+        ".\\src\\vault\\Cargo.toml",
+        ".\\src\\vault\\Cargo.toml",
+        ".\\src\\vault\\Cargo.toml",
+        ".\\Cargo.toml",
+        ".\\src\\service\\Cargo.toml",
+        ".\\Cargo.toml",
+        ".\\src\\vault\\Cargo.toml",
+        ".\\src\\vault\\Cargo.toml",
+        ".\\src\\vault\\Cargo.toml",
+        ".\\src\\vault\\Cargo.toml",
+        ".\\src\\vault\\Cargo.toml",
+        ".\\src\\vault\\Cargo.toml"
+    ],
 }

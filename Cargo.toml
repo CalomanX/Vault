@@ -1,7 +1,8 @@
 [workspace]
 members = [
     "./src/vault/",
-    "./src/cli/",
+    "./src/service/",
+    "./src/cli/",    
     # Add additional project paths here
 ]
 

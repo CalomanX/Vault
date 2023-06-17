@@ -1,0 +1,46 @@
+@startuml New Scope
+title How to create a new Scope
+
+start
+:input profile_key, auth_key, profile_password;/
+
+if (params are invalid or profile_password do not match profile password?) then (yes)
+    #red: error;
+    stop
+endif
+
+
+:
+let scope_key = b64 encode with (random bytes[6])
+let scope_key_enc = sha3-256(scope_key)
+;
+:
+let system_key = generate system key with (scope_key_enc)
+;
+:
+let nonce = derive with (scope_key_enc, system_key)
+;
+:
+Create a Scope with
+    key: scope_key,
+    name: profile_name,
+    is_active: true
+;
+:
+Cipher the Scope with 
+    Key: auth_key, 
+    nonce: nonce, 
+    aead: system_key
+as scope_secure
+;
+:
+Create an ScopeContainer with
+    key: scope_key,
+    scope_secure: scope_secure
+as scope_container
+;
+:
+Add the scope_container to the store
+;
+end
+@enduml

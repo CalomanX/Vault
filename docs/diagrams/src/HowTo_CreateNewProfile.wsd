@@ -1,0 +1,66 @@
+@startuml New Profile
+title How to create a new Profile
+
+start
+:input admin_profile_key, admin_password, profile_name, profile_password;/
+
+if (params are invalid?) then (yes)
+    #red: error;
+    stop
+endif
+
+if (admin_profile_key/password are NOT admin credencials) then (yes)
+    #red: error;
+    stop
+endif
+
+: 
+let profile_key = new UUid
+let profile_key_enc = sha3-256(profile_key)
+;
+if (is not a master profile and user is not admin?) then (yes)
+    #red: error;
+    stop
+endif
+:
+let system_key = generate user system key with (profile_key_enc)
+;
+:
+let password_key = derive with (password, system_key)
+;
+:
+let auth_key = encode_b64( random bytes(24) )
+;
+:
+let auth_key_phc = password-hash(auth_key, system_key)
+;
+:
+let nonce = derive with (system_key, auth_key)
+;
+:
+Create a Profile with
+    key: profile_key,
+    password_key: password_key,
+    name: profile_name,
+    is_master: false,
+;
+:
+Cipher the Profile with 
+    Key: auth_key, 
+    nonce: nonce, 
+    aead: system_key
+as admin_profile_secure
+;
+:
+Create an ProfileContainer with
+    key: profile_key,        
+    auth_key_phc: auth_key_phc,
+    is_active: true
+    intem_secure: admin_profile_secure
+as admin_container
+;
+:
+Add the profile container to the store
+;
+end
+@enduml

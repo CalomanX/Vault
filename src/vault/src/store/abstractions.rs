@@ -1,37 +1,48 @@
-use std::path::PathBuf;
 
-use crate::abstractions::{Result, EmptyResult};
+use crate::{VaultResult, profile::{ProfileContainer}, scope::ScopeContainer, secret::SecretContainer,};
+use chrono::{DateTime, Utc};
+
+use crate::VaultEmptyResult;
 
 use super::memory_store::MemoryStore;
 
 
-
-pub(crate) trait IStore: Sized {
-    fn ensure_init(&self) -> EmptyResult;
-
-    // fn try_open(&self) -> EmptyResult;
-
-    // fn try_close(&self) -> EmptyResult;
-
-    // fn try_read(&self, key: &str) -> Result<Option<Vec<u8>>>;
-
-    // fn try_write(&self, key: &String, record: &Vec<u8>) -> EmptyResult;
-
-    // fn try_remove(&self, key: &str) -> EmptyResult;
-
-    // fn try_init_vault(&self, root_value: &str) -> EmptyResult;
-
-    // fn try_add_profile(&self, profile: &Profile) -> EmptyResult;
-
-    // fn try_list_profiles(&self) -> Result<Vec<Profile>>;
-
-    // fn try_get_profile_with_key(&self, profile_key: &str) -> Result<Option<Profile>>;
-
-    // fn try_get_root_key(&self) -> Result<Option<Vec<u8>>>;
-
-    // fn try_update_profile_with_key(&self, profile_key: &str, data: &Vec<u8>) -> EmptyResult;
+pub(crate) trait IStoreInitializer {
+    fn ensure_no_store(target: Option<&str>) -> bool;
+    fn try_init(properties: &StoreProperties) -> VaultResult<MemoryStore>;
 }
 
+
+pub(crate) trait IStore: Send + Sync + 'static {
+
+
+    fn try_add_profile(&mut self, profile_container: &ProfileContainer) -> VaultEmptyResult;
+
+    fn try_get_profile(&self, key: &str) -> VaultResult<ProfileContainer>;
+
+    fn try_get_all_profiles(&self) -> VaultResult<Vec<ProfileContainer>>;
+
+    fn try_delete_profile(&mut self, key: &str) -> VaultEmptyResult;
+    
+    fn try_get_password_phc(&self, key: &str) -> VaultResult<String>;
+
+    fn try_add_scope(&mut self, scope: &crate::scope::ScopeContainer) -> VaultEmptyResult;
+
+    fn try_get_scope(&self, key: &str) -> VaultResult<ScopeContainer>;
+
+    fn try_get_all_profile_scopes(&self, profile_key: &str) -> VaultResult<Vec<ScopeContainer>>;
+
+    fn try_delete_scope(&mut self, key: &str) -> VaultEmptyResult;
+
+    fn try_add_secret(&mut self, secret: &crate::secret::SecretContainer) -> VaultEmptyResult;
+
+    fn try_get_secret(&self, secret_key: &str) -> VaultResult<SecretContainer>; 
+
+    fn try_delete_secret(&mut self, key: &str) -> VaultEmptyResult;
+
+    fn try_get_all_scope_secrets(&self, profile_key:&str, scope_key:&str) -> VaultResult<Vec<SecretContainer>>;
+
+}
 
 
 
@@ -39,27 +50,33 @@ pub(crate) trait IStore: Sized {
 #[derive(Debug, Clone)]
 pub(crate) struct StoreProperties {
     pub(crate) default_store: StoreType,
-    pub(crate) path: PathBuf
+    pub(crate) store_type: StoreType,
+    pub(crate) target: Option<String>,
+    pub(crate) date_created: DateTime<Utc>
 }
 
-impl Default for StoreContainer {
-    fn default() -> Self {
-        let properties = StoreProperties { default_store: StoreType::Memory, path: PathBuf::default()};
-        let store = MemoryStore { properties };
-        Self::Memory(store)
-    }
-}
+
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum StoreType {
+pub enum StoreType {
     Memory,
     Disk,
 }
 
-
-#[derive(Debug, Clone)]
-pub(crate) enum StoreContainer {
-    Memory(MemoryStore),
-    // Disk(DiskStore),
+impl From<&String> for StoreType {
+    fn from(value: &String) -> Self {
+        match value.to_lowercase().as_str() {
+            "disk" => StoreType::Disk,
+            _=> StoreType::Memory
+        }
+    }
 }
+
+impl Default for StoreType {
+    fn default() -> Self {
+        StoreType::Memory
+    }
+}
+
 

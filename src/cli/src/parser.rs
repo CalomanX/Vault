@@ -1,91 +1,107 @@
-use std::path::{Path, PathBuf};
+use std::{
+    env::{self, Args},
+    path::{Path, PathBuf},
+};
 
-use clap::{ArgMatches, Command, Subcommand, Args};
+use clap::{builder::ValueParser, value_parser, ArgMatches, Command, Subcommand};
 
-use vault::abstractions::{Result, EmptyResult};
+use vault::{
+    abstractions::{VaultEmptyResult, VaultError},
+    store::abstractions::StoreType,
+};
 
 use crate::default_values;
 
 /// Parse the command line arguments
-pub(crate) fn parse_args() {
+pub(crate) fn try_parse_and_run(args: Args) -> VaultEmptyResult {
+    let stty = clap::arg!(--"store-type" <STRING>)
+        .value_parser(["memory", "disk"])
+        .help("The store type to implement")
+        .required(true);
+
     let cmd = clap::Command::new("service")
         .author("CalomanX")
         .subcommand_required(true)
         .subcommands(vec![
-            clap::command!(default_values::INIT_COMMAND)
+            clap::command!("init")
                 .about("Initializes a new Vault.")
                 .arg(
-                    clap::arg!(--"security-key" <STRING>)
+                    clap::arg!(-p --"password" <STRING>)
                         .value_parser(clap::value_parser!(String))
-                        .help("The password for the administrative functions.")
+                        .help("The password for administrative functions.")
                         .required(true),
                 )
                 .arg(
-                    clap::arg!(--"target-path" <PATH>)
-                        .value_parser(clap::value_parser!(PathBuf))
-                        .help("The target location and name for the new Vault.")
+                    clap::arg!(-t --"store-type" <STRING>)
+                        .value_parser(clap::value_parser!(String))
+                )   
+                .arg(
+                    clap::arg!(--"target" <PATH>)
+                        .value_parser(clap::value_parser!(String))
+                        .help("The target for the new vault.")
                         .required(false),
                 ),
             clap::command!(default_values::ADMIN_COMMAND)
                 .about("Administrative access.")
                 .subcommand_required(true)
-                .subcommands(vec![
-                    clap::command!(default_values::ADD_PROFILE)
-                        .about("Adds a new consumer profile, either service or app.")
-                        .arg(
-                            clap::arg!(--"security-key" <STRING>)
-                                .value_parser(clap::value_parser!(String))
-                                .help("The password for the administrative functions.")
-                                .required(true),
-                        )
-                        .arg(
-                            clap::arg!(--"name" <STRING>)
-                                .value_parser(clap::value_parser!(String))
-                                .help("The name for the new profile.")
-                                .required(true),
-                        )
-                ])  
-                .subcommands(vec![
-                    clap::command!(default_values::LIST_PROFILES)
-                        .about("List all profiles.")
-                        .arg(
-                    clap::arg!(--"security-key" <STRING>)
-                        .value_parser(clap::value_parser!(String))
-                        .help("The password for the administrative functions.")
-                        .required(true),                            
-                        ),                        
-                ])
+                .subcommands(vec![clap::command!(default_values::ADD_PROFILE)
+                    .about("Adds a new consumer profile, either service or app.")
+                    .arg(
+                        clap::arg!(--"security-key" <STRING>)
+                            .value_parser(clap::value_parser!(String))
+                            .help("The password for the administrative functions.")
+                            .required(true),
+                    )
+                    .arg(
+                        clap::arg!(--"name" <STRING>)
+                            .value_parser(clap::value_parser!(String))
+                            .help("The name for the new profile.")
+                            .required(true),
+                    )])
+                .subcommands(vec![clap::command!(default_values::LIST_PROFILES)
+                    .about("List all profiles.")
+                    .arg(
+                        clap::arg!(--"security-key" <STRING>)
+                            .value_parser(clap::value_parser!(String))
+                            .help("The password for the administrative functions.")
+                            .required(true),
+                    )]),
         ]);
-    let matches = cmd.get_matches();
+    let matches = cmd.get_matches_from(args);
 
-    let scmd = matches.subcommand().unwrap();
+    let (command, args) = match matches.subcommand() {
+        Some(sc) => sc,
+        None => return Err(VaultError::from("Command is invalid!")),
+    };
 
-    match scmd.0 {
-        default_values::INIT_COMMAND => parse_init(scmd.1),
-        default_values::ADMIN_COMMAND => parse_admin(scmd.1),
+    match command {
+        default_values::INIT_COMMAND => parse_init(args)?,
+        default_values::ADMIN_COMMAND => parse_admin(args),
         _ => panic!("Ups! Will have that command in the near future. Just not right now!"),
     };
-
+    Ok(())
 }
 
-fn parse_init(cmd: &ArgMatches) {
-    let security_key =cmd.get_one::<String>(default_values::SECURITY_KEY).unwrap();
+fn parse_init(cmd: &ArgMatches) -> VaultEmptyResult {
+    let password = cmd.get_one::<String>("password").unwrap();
 
-    let mut target_path = match cmd.get_one::<PathBuf>(default_values::TARGET_PATH) {
-        Some(v) => v.to_owned(),
-        None => std::path::Path::new("./").to_path_buf(),
+    let store_type = match cmd.get_one::<String>("store-type") {
+        Some(st) => StoreType::from(st),
+        None => return Err(VaultError::from("Invalid store type!")),
     };
 
-    if !Path::exists(&target_path) {
-        panic!("target-path should be an existing directory.");
-    }
+    let target = match cmd.get_one::<String>("target") {
+        Some(target) => Some(target.as_str()),
+        None => None,
+    };
 
-    if Path::is_dir(&target_path) {
-        target_path = target_path.join(default_values::VAULT_FILE_NAME);
-    }
+    let (profile_key, auth_key) = vault::init_vault(&password, store_type, target)?;
 
-    todo!()
-    // vault::init_vault(security_key)
+    println!("Vault created successfully!");
+    println!("\tProfile key is       : {:?}", profile_key);
+    println!("\tAuthorization key is : {:?}", auth_key);
+
+    Ok(())
 }
 
 fn parse_admin(subcommand_matches: &ArgMatches) {
@@ -94,7 +110,7 @@ fn parse_admin(subcommand_matches: &ArgMatches) {
     match cmd.0 {
         default_values::ADD_PROFILE => parse_admin_add_profile(cmd.1),
         default_values::LIST_PROFILES => parse_admin_list_profiles(cmd.1),
-        _ => panic!("Ups! Will have that command in the near future. Just not right now!"),        
+        _ => panic!("Ups! Will have that command in the near future. Just not right now!"),
     };
 }
 
@@ -108,7 +124,6 @@ fn parse_admin_list_profiles(args: &ArgMatches) {
 }
 
 fn parse_admin_add_profile(args: &ArgMatches) {
-
     let security_key = args
         .get_one::<String>(default_values::SECURITY_KEY)
         .unwrap();
@@ -117,5 +132,4 @@ fn parse_admin_add_profile(args: &ArgMatches) {
 
     todo!()
     //vault::add_profile(security_key, name);
-
 }
